@@ -199,9 +199,12 @@ class Geometry {
 	 * @returns {number}
 	 */
 	cotan(h) {
-		// TODO
-
-		return 0.0; // placeholder
+		
+		let p1 = this.positions[h.vertex];
+		let p2 = this.positions[h.next.vertex];
+		let p0 = this.positions[h.next.next.vertex];
+		
+		return p1.minus(p0).dot(p2.minus(p0)) / p1.minus(p0).cross(p2.minus(p0)).norm();
 	}
 
 	/**
