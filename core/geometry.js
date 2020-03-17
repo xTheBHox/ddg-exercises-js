@@ -199,10 +199,15 @@ class Geometry {
 	 * @returns {number}
 	 */
 	cotan(h) {
-		
+    
+    let v0 = this.vector(h.next.twin);
+    let v1 = this.vector(h.prev);
+
+		return v0.dot(v1) / v1.cross(v0).norm();
+    
 		let p1 = this.positions[h.vertex];
 		let p2 = this.positions[h.next.vertex];
-		let p0 = this.positions[h.next.next.vertex];
+		let p0 = this.positions[h.prev.vertex];
 		
 		return p1.minus(p0).dot(p2.minus(p0)) / p1.minus(p0).cross(p2.minus(p0)).norm();
 	}
@@ -227,9 +232,15 @@ class Geometry {
 	 * @returns {number}
 	 */
 	barycentricDualArea(v) {
-		// TODO
-
-		return 0.0; // placeholder
+    let h = v.halfedge;
+    let si = h.index;
+    let total = 0.0;
+    do {
+      total += this.area(h.face);
+      h = h.twin.next;
+    } while (h.index != si)
+    
+		return total / 3.0;
 	}
 
 	/**
@@ -240,9 +251,17 @@ class Geometry {
 	 * @returns {number}
 	 */
 	circumcentricDualArea(v) {
-		// TODO
-
-		return 0.0; // placeholder
+    let h = v.halfedge.twin;
+    let si = h.index;
+    let total = 0.0;
+    do {
+      total += this.vector(h).norm2() * this.cotan(h);
+      h = h.next;
+      total += this.vector(h).norm2() * this.cotan(h);
+      h = h.twin;
+    } while (h.index != si)
+    
+		return total / 8.0;
 	}
 
 	/**
