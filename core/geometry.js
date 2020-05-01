@@ -203,6 +203,8 @@ class Geometry {
 	 */
 	cotan(h) {
     
+		if (h.onBoundary) return 0;
+	
 		let v0 = this.vector(h.next.twin);
 		let v1 = this.vector(h.prev);
 
@@ -478,9 +480,19 @@ class Geometry {
 	 * @returns {module:LinearAlgebra.SparseMatrix}
 	 */
 	laplaceMatrix(vertexIndex) {
-		// TODO
-
-		return SparseMatrix.identity(1, 1); // placeholder
+		let T = new Triplet(this.mesh.vertices.length, this.mesh.vertices.length);
+		for (let v of this.mesh.vertices) {
+			let vi = vertexIndex[v];
+			let acc = 0;
+			for (let h of v.adjacentHalfedges()) {
+				let ui = vertexIndex[h.twin.vertex];
+				let val = (this.cotan(h) + this.cotan(h.twin)) / 2.0;
+				acc += val;
+				T.addEntry(-val, vi, ui);
+			}
+			T.addEntry(acc + 1e-8, vi, vi);
+		}
+		return SparseMatrix.fromTriplet(T);
 	}
 
 	/**
@@ -491,9 +503,12 @@ class Geometry {
 	 * @returns {module:LinearAlgebra.SparseMatrix}
 	 */
 	massMatrix(vertexIndex) {
-		// TODO
-
-		return SparseMatrix.identity(1, 1); // placeholder
+		let T = new Triplet(this.mesh.vertices.length, this.mesh.vertices.length);
+		for (let v of this.mesh.vertices) {
+			let vi = vertexIndex[v];
+			T.addEntry(this.barycentricDualArea(v), vi, vi);
+		}
+		return SparseMatrix.fromTriplet(T);
 	}
 
 	/**
@@ -505,9 +520,19 @@ class Geometry {
 	 * @returns {module:LinearAlgebra.ComplexSparseMatrix}
 	 */
 	complexLaplaceMatrix(vertexIndex) {
-		// TODO
-
-		return ComplexSparseMatrix.identity(1, 1); // placeholder
+		let T = new ComplexTriplet(this.mesh.vertices.length, this.mesh.vertices.length);
+		for (let v of this.mesh.vertices) {
+			let vi = vertexIndex[v];
+			let acc = 0;
+			for (let h of v.adjacentHalfedges()) {
+				let ui = vertexIndex[h.twin.vertex];
+				let val = (this.cotan(h) + this.cotan(h.twin)) / 2.0;
+				acc += val;
+				T.addEntry(new Complex(-val, 0), vi, ui);
+			}
+			T.addEntry(new Complex(acc + 1e-8, 0), vi, vi);
+		}
+		return ComplexSparseMatrix.fromTriplet(T);
 	}
 }
 

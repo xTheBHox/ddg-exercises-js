@@ -21,9 +21,18 @@ class SpectralConformalParameterization {
 	 * @returns {module:LinearAlgebra.ComplexSparseMatrix}
 	 */
 	buildConformalEnergy() {
-		// TODO
-
-		return ComplexSparseMatrix.identity(1, 1); // placeholder
+		
+		let T = new ComplexTriplet(this.geometry.mesh.vertices.length, this.geometry.mesh.vertices.length);
+		for (let bf of this.geometry.mesh.boundaries) {
+			for (let h of bf.adjacentHalfedges()) {
+				let vi = this.vertexIndex[h.vertex];
+				let vj = this.vertexIndex[h.twin.vertex];
+				T.addEntry(new Complex(0, 0.25), vi, vj);
+				T.addEntry(new Complex(0, -0.25), vj, vi);
+			}
+		}
+		let A = ComplexSparseMatrix.fromTriplet(T);
+		return this.geometry.complexLaplaceMatrix(this.vertexIndex).timesComplex(new Complex(0.5)).minus(A);
 	}
 
 	/**
@@ -34,8 +43,13 @@ class SpectralConformalParameterization {
 	flatten() {
 		// TODO
 		let vertices = this.geometry.mesh.vertices;
-		let flattening = this.geometry.positions; // placeholder
-
+		let eigvec = Solvers.solveInversePowerMethod(this.buildConformalEnergy())
+		let flattening = new Map();
+		for (let v of vertices) {
+			let c = eigvec.get(this.vertexIndex[v]);
+			flattening[v] = new Vector(c.re, c.im);
+		}
+		
 		// normalize flattening
 		normalize(flattening, vertices);
 
